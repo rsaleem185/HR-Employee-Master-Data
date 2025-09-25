@@ -114,4 +114,6 @@ with b1:
             "Scheduled Hours": 40,
             "Working Days": ["Mon","Tue","Wed","Thu","Fri","Sat"],
             "Joining Date": "2024-05-15",
-            "Leaving Date"
+            "Leaving Date": ""
+        }
+        st.rerun()
