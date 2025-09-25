@@ -27,12 +27,11 @@ STORE_ID_OPTIONS = [
 EMPLOYMENT_STATUS_OPTIONS = ["F1","F2","Citizen","Greencard","Asylum","H1B","B1/B2","H4"]
 GENDER_OPTIONS = ["Male","Female","Prefer not to say"]
 MARITAL_STATUS_OPTIONS = ["Single","Married","Prefer not to say"]
-PAY_BASIS_OPTIONS = ["Hourly","Salary","Mixed"]           # drives required pay fields
-PAYMENT_TYPE_OPTIONS = ["Cash","Check","Cash/Check"]      # method of payment
+PAY_BASIS_OPTIONS = ["Hourly","Salary","Mixed"]
+PAYMENT_TYPE_OPTIONS = ["Cash","Check","Cash/Check"]
 
 # ----------------------------
 # Schema (SSN REMOVED)
-# types: text | number | date | select | multiselect
 # ----------------------------
 SCHEMA = [
     ("Employee ID", "Unique, non-recycled employee code.", "text", None),
@@ -117,3 +116,105 @@ with b1:
             "Leaving Date": ""
         }
         st.rerun()
+with b2:
+    if st.button("Clear Form"):
+        st.session_state.defaults = {}
+        st.rerun()
+with b3:
+    if st.button("Clear Table"):
+        st.session_state.rows_raw = []
+        st.success("Table cleared.")
+
+# ----------------------------
+# Form (auto-generated)
+# ----------------------------
+st.subheader("Add Employee")
+defs = st.session_state.defaults
+
+def parse_default_date(s):
+    if isinstance(s, str) and len(s) == 10:
+        try:
+            y,m,d = map(int, s.split("-"))
+            return date(y,m,d)
+        except Exception:
+            return None
+    return None
+
+with st.form("emp_form", clear_on_submit=False):
+    cols = st.columns(3)
+    values = {}
+    for i, (field, desc, ftype, options) in enumerate(SCHEMA):
+        with cols[i % 3]:
+            if ftype == "select":
+                opts = options or []
+                default_val = defs.get(field, "")
+                idx = opts.index(default_val) if default_val in opts else 0
+                values[field] = st.selectbox(field, opts, index=idx, key=f"f_{field}")
+            elif ftype == "multiselect":
+                values[field] = st.multiselect(field, options, default=defs.get(field, []), key=f"f_{field}")
+            elif ftype == "date":
+                values[field] = st.date_input(field, value=parse_default_date(defs.get(field)), format="YYYY-MM-DD", key=f"f_{field}")
+            elif ftype == "number":
+                values[field] = st.number_input(field, value=defs.get(field, 0), step=1.0, format="%.2f", key=f"f_{field}")
+            else:
+                values[field] = st.text_input(field, defs.get(field, ""), key=f"f_{field}")
+            st.caption(desc)
+
+    submitted = st.form_submit_button("Add row")
+    if submitted:
+        clean = {}
+        for field, _, ftype, _ in SCHEMA:
+            v = values[field]
+            if ftype == "date" and v:
+                v = v.isoformat()
+            if ftype == "multiselect":
+                v = ", ".join(v)
+            clean[field] = v
+        st.session_state.rows_raw.append(clean)
+        st.success("Row added.")
+
+# ----------------------------
+# Preview
+# ----------------------------
+st.subheader("Staging Table")
+if st.session_state.rows_raw:
+    df_raw = pd.DataFrame(st.session_state.rows_raw, columns=FIELDS)
+    st.dataframe(df_raw, use_container_width=True, hide_index=True)
+    st.write(f"**Rows:** {len(df_raw)}")
+else:
+    df_raw = pd.DataFrame(columns=FIELDS)
+    st.dataframe(df_raw, use_container_width=True, hide_index=True)
+    st.write("**Rows:** 0")
+
+# ----------------------------
+# Downloads
+# ----------------------------
+def make_excel_bytes(master_df: pd.DataFrame) -> bytes:
+    dict_df = pd.DataFrame({
+        "Field": [s[0] for s in SCHEMA],
+        "Description": [s[1] for s in SCHEMA]
+    })
+    bio = BytesIO()
+    with pd.ExcelWriter(bio, engine="xlsxwriter") as xw:
+        master_df.to_excel(xw, sheet_name="Master", index=False)
+        dict_df.to_excel(xw, sheet_name="DataDictionary", index=False)
+    return bio.getvalue()
+
+st.subheader("Download")
+cA, cB = st.columns(2)
+with cA:
+    st.download_button(
+        "Download Excel (.xlsx)",
+        data=make_excel_bytes(df_raw),
+        file_name="EmployeeMaster.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        disabled=df_raw.empty,
+    )
+with cB:
+    st.download_button(
+        "Download CSV",
+        data=df_raw.to_csv(index=False).encode("utf-8"),
+        file_name="EmployeeMaster.csv",
+        mime="text/csv",
+        disabled=df_raw.empty,
+    )
