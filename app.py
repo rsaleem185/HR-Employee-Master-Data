@@ -5,7 +5,7 @@ from datetime import date
 
 st.set_page_config(page_title="HR Employee Master → Excel", layout="wide")
 
-# ---------- Store / Company dropdown options ----------
+# ---------- Dropdown options ----------
 STORE_OPTIONS = [
     "4955 USA LLC","A&K Global USA LLC","Aaliya USA LLC","Arshi & Khushi LLC","Ask Global USA LLC",
     "BH1 USA LLC","CAD1 USA LLC","CDP USA LLC","CDP1 USA LLC","CH1 USA LLC","EM1 USA LLC",
@@ -16,14 +16,12 @@ STORE_OPTIONS = [
     "TWP1 USA LLC","WC1 USA LLC","NextDay Wholesale LLC","YVS Partners LLC","Skyzone",
 ]
 
-# ---------- Store ID dropdown options ----------
 STORE_ID_OPTIONS = [
     "4955","AKG","AAL","ANK1","ASK","BH1","CAD1","CDP","CDP1","CH1","EM1","FTS","FPM1","FR1","FR2",
     "HR1","JBR2","JFH3","JFH4","KAI","MLK1","MAM1","MH1","MVB1","NE41","NNG1","NDWS","ODH1","RX1",
     "SGC","SS1","SSM2","TR1","TS1","TWP1","WC1"
 ]
 
-# ---------- Controlled dropdowns ----------
 EMPLOYMENT_STATUS_OPTIONS = ["F1","F2","Citizen","Greencard","Asylum","H1B","B1/B2","H4"]
 GENDER_OPTIONS = ["Male","Female","Prefer not to say"]
 MARITAL_STATUS_OPTIONS = ["Single","Married","Prefer not to say"]
@@ -34,39 +32,31 @@ PAYMENT_TYPE_OPTIONS = ["Cash","Check","Cash/Check"]
 # Schema (SSN REMOVED)
 # ----------------------------
 SCHEMA = [
-    ("Employee ID", "Unique, non-recycled employee code.", "text", None),
-    ("Payroll ID", "Payroll system employee ID.", "text", None),
-
-    ("Store ID", "Select store/site code.", "select", STORE_ID_OPTIONS),
-    ("Store/ Company Name", "Select store/company from list.", "select", STORE_OPTIONS),
-    ("Store Address", "Full store address (optional).", "text", None),
-
-    ("Full Name", "Employee full name.", "text", None),
-    ("Designation", "Job title/designation.", "text", None),
-    ("Manager Name", "Direct manager's full name.", "text", None),
-
-    ("Date of Birth", "YYYY-MM-DD.", "date", None),
-    ("Gender", "Gender.", "select", GENDER_OPTIONS),
-    ("Marital Status", "Marital status.", "select", MARITAL_STATUS_OPTIONS),
-    ("Contact Number", "Primary phone.", "text", None),
-    ("Email Address", "Work/personal email.", "text", None),
-
-    ("Status", "Active state.", "select", ["Active","On Leave","Terminated"]),
-    ("Employment Status", "Work authorization / status.", "select", EMPLOYMENT_STATUS_OPTIONS),
-    ("Employment Type", "FT/PT/etc.", "select", ["Full-time","Part-time","Temporary","Intern","Contractor"]),
-
-    ("Pay Basis", "Hourly/Salary/Mixed (controls required pay fields).", "select", PAY_BASIS_OPTIONS),
-    ("Payment Type", "Payment method.", "select", PAYMENT_TYPE_OPTIONS),
-
-    ("Hourly Pay Rate", "Hourly $ (if Pay Basis is Hourly or Mixed).", "number", None),
-    ("Monthly Salary", "Monthly $ (if Pay Basis is Salary or Mixed).", "number", None),
-    ("Weekly Salary", "Weekly $ (if Pay Basis is Salary or Mixed).", "number", None),
-
-    ("Scheduled Hours", "Planned hours per week.", "number", None),
-    ("Working Days", "Weekdays worked.", "multiselect", ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]),
-
-    ("Joining Date", "Employee start date (YYYY-MM-DD).", "date", None),
-    ("Leaving Date", "If left, last day (YYYY-MM-DD).", "date", None),
+    ("Employee ID", "text", None),
+    ("Payroll ID", "text", None),
+    ("Store ID", "select", STORE_ID_OPTIONS),
+    ("Store/ Company Name", "select", STORE_OPTIONS),
+    ("Store Address", "text", None),
+    ("Full Name", "text", None),
+    ("Designation", "text", None),
+    ("Manager Name", "text", None),
+    ("Date of Birth", "date", None),
+    ("Gender", "select", GENDER_OPTIONS),
+    ("Marital Status", "select", MARITAL_STATUS_OPTIONS),
+    ("Contact Number", "text", None),
+    ("Email Address", "text", None),
+    ("Status", "select", ["Active","On Leave","Terminated"]),
+    ("Employment Status", "select", EMPLOYMENT_STATUS_OPTIONS),
+    ("Employment Type", "select", ["Full-time","Part-time","Temporary","Intern","Contractor"]),
+    ("Pay Basis", "select", PAY_BASIS_OPTIONS),
+    ("Payment Type", "select", PAYMENT_TYPE_OPTIONS),
+    ("Hourly Pay Rate", "number", None),
+    ("Monthly Salary", "number", None),
+    ("Weekly Salary", "number", None),
+    ("Scheduled Hours", "number", None),
+    ("Working Days", "multiselect", ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]),
+    ("Joining Date", "date", None),
+    ("Leaving Date", "date", None),
 ]
 
 FIELDS = [f[0] for f in SCHEMA]
@@ -76,94 +66,40 @@ FIELDS = [f[0] for f in SCHEMA]
 # ----------------------------
 if "rows_raw" not in st.session_state:
     st.session_state.rows_raw = []
-if "defaults" not in st.session_state:
-    st.session_state.defaults = {}
 
 # ----------------------------
-# Header & quick actions
+# Header
 # ----------------------------
 st.title("HR Employee Master → Excel")
-st.caption("Fill the form → Add row → Download Excel/CSV. Excel includes a Data Dictionary sheet.")
-
-b1, b2, b3, _ = st.columns([1,1,1,3])
-with b1:
-    if st.button("Load Sample into Form"):
-        st.session_state.defaults = {
-            "Employee ID": "E1027",
-            "Payroll ID": "PR-7788",
-            "Store ID": "NDWS",
-            "Store/ Company Name": "NextDay Wholesale LLC",
-            "Store Address": "123 Peachtree St, Atlanta, GA 30303",
-            "Full Name": "Sami Khan",
-            "Designation": "Inventory Control & CRM Associate",
-            "Manager Name": "Alex Morgan",
-            "Date of Birth": "1996-04-15",
-            "Gender": "Male",
-            "Marital Status": "Single",
-            "Contact Number": "404-555-2000",
-            "Email Address": "sami.khan@company.com",
-            "Status": "Active",
-            "Employment Status": "Citizen",
-            "Employment Type": "Full-time",
-            "Pay Basis": "Hourly",
-            "Payment Type": "Cash",
-            "Hourly Pay Rate": 22,
-            "Monthly Salary": None,
-            "Weekly Salary": None,
-            "Scheduled Hours": 40,
-            "Working Days": ["Mon","Tue","Wed","Thu","Fri","Sat"],
-            "Joining Date": "2024-05-15",
-            "Leaving Date": ""
-        }
-        st.rerun()
-with b2:
-    if st.button("Clear Form"):
-        st.session_state.defaults = {}
-        st.rerun()
-with b3:
-    if st.button("Clear Table"):
-        st.session_state.rows_raw = []
-        st.success("Table cleared.")
+st.caption("Fill the form → Add row → Download Excel/CSV.")
 
 # ----------------------------
-# Form (auto-generated)
+# Form
 # ----------------------------
 st.subheader("Add Employee")
-defs = st.session_state.defaults
 
-def parse_default_date(s):
-    if isinstance(s, str) and len(s) == 10:
-        try:
-            y,m,d = map(int, s.split("-"))
-            return date(y,m,d)
-        except Exception:
-            return None
-    return None
-
-with st.form("emp_form", clear_on_submit=False):
+with st.form("emp_form", clear_on_submit=True):
     cols = st.columns(3)
     values = {}
-    for i, (field, desc, ftype, options) in enumerate(SCHEMA):
+    for i, (field, ftype, options) in enumerate(SCHEMA):
         with cols[i % 3]:
             if ftype == "select":
                 opts = options or []
-                default_val = defs.get(field, "")
-                idx = opts.index(default_val) if default_val in opts else 0
-                values[field] = st.selectbox(field, opts, index=idx, key=f"f_{field}")
+                values[field] = st.selectbox(field, opts, key=f"f_{field}")
             elif ftype == "multiselect":
-                values[field] = st.multiselect(field, options, default=defs.get(field, []), key=f"f_{field}")
+                values[field] = st.multiselect(field, options, key=f"f_{field}")
             elif ftype == "date":
-                values[field] = st.date_input(field, value=parse_default_date(defs.get(field)), format="YYYY-MM-DD", key=f"f_{field}")
+                values[field] = st.date_input(field, value=None, key=f"f_{field}")
             elif ftype == "number":
-                values[field] = st.number_input(field, value=defs.get(field, 0), step=1.0, format="%.2f", key=f"f_{field}")
+                values[field] = st.number_input(field, value=0.0, step=1.0, format="%.2f", key=f"f_{field}")
             else:
-                values[field] = st.text_input(field, defs.get(field, ""), key=f"f_{field}")
-            st.caption(desc)
+                values[field] = st.text_input(field, "", key=f"f_{field}")
 
     submitted = st.form_submit_button("Add row")
+
     if submitted:
         clean = {}
-        for field, _, ftype, _ in SCHEMA:
+        for field, ftype, _ in SCHEMA:
             v = values[field]
             if ftype == "date" and v:
                 v = v.isoformat()
@@ -177,23 +113,22 @@ with st.form("emp_form", clear_on_submit=False):
 # Preview
 # ----------------------------
 st.subheader("Staging Table")
-if st.session_state.rows_raw:
-    df_raw = pd.DataFrame(st.session_state.rows_raw, columns=FIELDS)
-    st.dataframe(df_raw, use_container_width=True, hide_index=True)
-    st.write(f"**Rows:** {len(df_raw)}")
-else:
-    df_raw = pd.DataFrame(columns=FIELDS)
-    st.dataframe(df_raw, use_container_width=True, hide_index=True)
-    st.write("**Rows:** 0")
+df_raw = pd.DataFrame(st.session_state.rows_raw, columns=FIELDS)
+st.dataframe(df_raw, use_container_width=True, hide_index=True)
+st.write(f"**Rows:** {len(df_raw)}")
+
+# ----------------------------
+# Clear Table Button
+# ----------------------------
+if st.button("Clear All Records"):
+    st.session_state.rows_raw = []
+    st.success("All records cleared.")
 
 # ----------------------------
 # Downloads
 # ----------------------------
 def make_excel_bytes(master_df: pd.DataFrame) -> bytes:
-    dict_df = pd.DataFrame({
-        "Field": [s[0] for s in SCHEMA],
-        "Description": [s[1] for s in SCHEMA]
-    })
+    dict_df = pd.DataFrame({"Field": [s[0] for s in SCHEMA]})
     bio = BytesIO()
     with pd.ExcelWriter(bio, engine="xlsxwriter") as xw:
         master_df.to_excel(xw, sheet_name="Master", index=False)
